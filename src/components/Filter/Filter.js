@@ -32,7 +32,8 @@ function Filter() {
   //   change combobox priority
   const handlePriorityChange = (value) => {
     setFilterPriorities(value);
-    dispatch(filtersSlice.actions.priorityFilterChange(value));
+    // console.log(value);
+    dispatch(filtersSlice.actions.prioritiesFilterChange(value));
   };
 
   //   const handleSearchButtonClick = () => {

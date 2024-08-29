@@ -30,24 +30,11 @@
 
 // export default todoListReducer;
 
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-export default createSlice({
+const todosSlice = createSlice({
   name: "todoList",
-  initialState: [
-    {
-      id: 1,
-      name: "learn javascript",
-      completed: true,
-      priority: "Medium",
-    },
-    {
-      id: 2,
-      name: "learn reactjs",
-      completed: false,
-      priority: "High",
-    },
-  ],
+  initialState: { status: "idle", todos: [] },
   reducers: {
     addTodo: (state, action) => {
       state.push(action.payload);
@@ -59,4 +46,67 @@ export default createSlice({
       }
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTodos.pending, (state, action) => {
+        state.status = "loading";
+      })
+      .addCase(fetchTodos.fulfilled, (state, action) => {
+        state.todos = action.payload;
+        state.status = "idle";
+      })
+      .addCase(addNewTodo.fulfilled, (state, action) => {
+        state.todos.push(action.payload);
+      })
+      .addCase(updateTodo.fulfilled, (state, action) => {
+        let currentTodo = state.todos.find(
+          (todo) => todo.id === action.payload
+        );
+
+        currentTodo.completed = !currentTodo.completed;
+      });
+  },
 });
+
+export const fetchTodos = createAsyncThunk("todos/fetchTodos", async () => {
+  const res = await fetch("/api/todos");
+  const data = await res.json();
+  return data.todos;
+});
+
+export const addNewTodo = createAsyncThunk(
+  "todo/addNewTodo",
+  async (newTodo) => {
+    const res = await fetch("/api/todos", {
+      method: "post",
+      body: JSON.stringify(newTodo),
+    });
+    const data = await res.json();
+    return data.todos;
+  }
+);
+
+export const updateTodo = createAsyncThunk(
+  "todos/updateTodo",
+  async (updatedTodo) => {
+    const res = await fetch("/api/updateTodo", {
+      method: "post",
+      body: JSON.stringify(updatedTodo),
+    });
+    const data = await res.json();
+    return data.todos.id;
+  }
+);
+
+export default todosSlice;
+
+export function addTodos(todo) {
+  //thunk function - thunk action
+  return function addTodosThunk(dispatch, getState) {
+    console.log("[addTodoThunk]:", getState());
+    //custom
+    dispatch(todosSlice.actions.addTodo(todo));
+
+    console.log("[addTodosThunk after]:", getState());
+  };
+}
